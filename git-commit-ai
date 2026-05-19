@@ -111,6 +111,36 @@ def build_default_config():
     return {"provider": "deepseek", "providers": providers}
 
 
+def _read_env_from_shell(env_var):
+    """Fallback: source shell rc files to read an environment variable."""
+    shell = os.environ.get("SHELL", "")
+    if not shell:
+        return ""
+    base = os.path.basename(shell)
+    home = os.path.expanduser("~")
+
+    if "zsh" in base:
+        rc = f"source {home}/.zshenv 2>/dev/null; source {home}/.zshrc 2>/dev/null; source {home}/.zprofile 2>/dev/null"
+    elif "bash" in base:
+        rc = f"source {home}/.profile 2>/dev/null; source {home}/.bash_profile 2>/dev/null; source {home}/.bashrc 2>/dev/null"
+    elif "fish" in base:
+        rc = f"source {home}/.config/fish/config.fish 2>/dev/null"
+    else:
+        rc = f"source {home}/.profile 2>/dev/null; source {home}/.bashrc 2>/dev/null"
+
+    try:
+        result = subprocess.run(
+            [shell, "-c", f"{rc}; printenv {env_var}"],
+            capture_output=True, text=True, timeout=5,
+        )
+        val = result.stdout.strip()
+        if val:
+            return val
+    except Exception:
+        pass
+    return ""
+
+
 def resolve_api_key(name, cfg):
     env_var = f"{name.upper()}_API_KEY"
     val = os.environ.get(env_var, "")
@@ -119,8 +149,13 @@ def resolve_api_key(name, cfg):
     raw = cfg.get("api_key", "")
     if raw.startswith("${") and raw.endswith("}"):
         var = raw[2:-1]
-        return os.environ.get(var, "").strip()
-    return raw.strip()
+        val = os.environ.get(var, "").strip()
+        return val or _read_env_from_shell(var)
+    if raw:
+        val = raw.strip()
+        if val and not val.startswith("${"):
+            return val
+    return _read_env_from_shell(env_var)
 
 
 def http_post(url, headers, payload):
@@ -147,7 +182,7 @@ def call_openai(endpoint, model, key, diff, branch):
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": f"Branch: {branch}\n\nDiff:\n{diff}"},
             ],
-            "max_tokens": 80,
+            "max_tokens": 1024,
             "temperature": 0.1,
         },
     )
@@ -164,7 +199,7 @@ def call_anthropic(endpoint, model, key, diff, branch):
         },
         {
             "model": model,
-            "max_tokens": 80,
+            "max_tokens": 1024,
             "temperature": 0.1,
             "system": SYSTEM_PROMPT,
             "messages": [{"role": "user", "content": f"Branch: {branch}\n\nDiff:\n{diff}"}],
@@ -184,7 +219,7 @@ def call_gemini(endpoint, model, key, diff, branch):
                     "parts": [{"text": f"{SYSTEM_PROMPT}\n\nBranch: {branch}\n\nDiff:\n{diff}"}],
                 }
             ],
-            "generationConfig": {"maxOutputTokens": 80, "temperature": 0.1},
+            "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.1},
         },
     )
     return data["candidates"][0]["content"]["parts"][0]["text"].strip()
