@@ -1,0 +1,32 @@
+# Lazygit integration — add to ~/.config/lazygit/config.yml
+
+customCommands:
+  - key: 'c'
+    context: 'files'
+    command: 'git-commit-ai commit'
+    description: 'Commit with AI message'
+    loadingText: 'Generating commit message...'
+    output: 'popup'
+  - key: 'K'
+    context: 'files'
+    command: 'git-commit-ai edit'
+    description: 'Generate, edit & commit'
+    output: 'terminal'
+  - key: '<c-p>'
+    context: 'files'
+    prompts:
+      - type: 'menu'
+        title: 'AI Provider'
+        key: 'Provider'
+        options:
+          - name: 'deepseek'
+          - name: 'openai'
+          - name: 'anthropic'
+          - name: 'gemini'
+          - name: 'grok'
+          - name: 'qwen'
+          - name: 'minimax'
+          - name: 'glm'
+          - name: 'kimi'
+    command: 'git-commit-ai set-provider {{.Form.Provider}}'
+    description: 'Switch AI provider'

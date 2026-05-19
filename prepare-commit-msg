@@ -1,0 +1,21 @@
+#!/bin/bash
+# prepare-commit-msg hook — optional, for terminal git usage
+# Install:
+#   cp prepare-commit-msg ~/.config/git/hooks/ && chmod +x ~/.config/git/hooks/prepare-commit-msg
+#   git config --global core.hooksPath ~/.config/git/hooks
+
+COMMIT_FILE=$1
+SOURCE=$2
+
+if [ -n "$SOURCE" ] && [ "$SOURCE" != "commit" ]; then
+    exit 0
+fi
+
+if [ -s "$COMMIT_FILE" ]; then
+    exit 0
+fi
+
+MSG=$(git-commit-ai 2>/dev/null)
+if [ -n "$MSG" ]; then
+    echo "$MSG" > "$COMMIT_FILE"
+fi
