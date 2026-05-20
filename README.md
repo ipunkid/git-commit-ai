@@ -69,7 +69,11 @@ name (e.g. `$OPENAI_API_KEY`, `$ANTHROPIC_API_KEY`, etc.).
 
 ### 2. Configure lazygit
 
-Copy the snippet from `lazygit-config.yml` into `~/.config/lazygit/config.yml`:
+lazygit reads its config from the directory printed by `lazygit --print-config-dir`:
+- **Linux**: `~/.config/lazygit/config.yml`
+- **macOS** (default): `~/Library/Application Support/lazygit/config.yml`
+
+Find yours and add the snippet from `lazygit-config.yml`:
 
 ```yaml
 customCommands:
@@ -104,7 +108,7 @@ customCommands:
     description: 'Switch AI provider'
 ```
 
-Make sure `XDG_CONFIG_HOME` is set (most modern setups already have it):
+To use `~/.config/lazygit/config.yml` on macOS instead, set `XDG_CONFIG_HOME`:
 
 ```bash
 export XDG_CONFIG_HOME="$HOME/.config"
